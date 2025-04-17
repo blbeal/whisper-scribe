@@ -1,0 +1,22 @@
+# Whisper binary and model files
+*.bin
+*.exe
+*.dll
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+env/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.wav
