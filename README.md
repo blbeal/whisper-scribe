@@ -1,19 +1,6 @@
 # Whisper.cpp Desktop Transcription Tool
 
-A desktop transcription application that lets you transcribe speech to text in any text field using a hotkey. The application runs in the system tray and uses a hotkey (Alt+period) to activate recording, transcribes the speech using whisper.cpp, and then types the transcribed text at the cursor position.
-
-## Features
-
-- **System Tray Application:** Runs quietly in the background with minimal UI
-- **Hotkey Activation:** Press Alt+period to start and stop recording
-- **Real-time Audio Recording:** Records from your default microphone
-- **Speech Recognition:** Uses whisper.cpp for accurate transcription
-- **Text Insertion:** Automatically types the transcribed text at your cursor position
-- **Notifications:** Provides feedback through system notifications
-
-# Whisper.cpp Desktop Transcription Tool
-
-A desktop application that allows users to transcribe speech to text in any text field using a hotkey (Alt+period). The application runs in the system tray and transcribes speech using whisper.cpp.
+A desktop application that allows users to transcribe speech to text in any text field using a hotkey (Alt+period). The application runs in the system tray and transcribes speech using whisper.cpp offline.
 
 ## Features
 - System tray application with hotkey activation (Alt+period)
