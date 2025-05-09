@@ -73,6 +73,8 @@ class SubprocessWhisper:
                 # Clean up the transcription
                 # Remove any remaining special tags or markers
                 clean_transcription = re.sub(r'\[.*?\]', '', transcription).strip()
+                # Remove any stray bracket characters that might remain
+                clean_transcription = clean_transcription.replace('[', '').replace(']', '')
                 
                 # Print the extracted transcription for debugging
                 print(f"Extracted transcription: '{clean_transcription}'")
