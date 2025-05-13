@@ -8,9 +8,13 @@ import numpy as np
 import sounddevice as sd
 import pyautogui
 import time
-from whisper_wrapper import Whisper
 import traceback
 from subprocess_whisper import SubprocessWhisper
+from util import get_resource_path
+from PySide6.QtCore import QCoreApplication, QTimer
+from ctypes import windll
+
+windll.shell32.SetCurrentProcessExplicitAppUserModelID(QCoreApplication.applicationName())
 
 class AudioRecorder(QThread):
     """Thread for recording audio without blocking the main application"""
@@ -41,6 +45,11 @@ class AudioRecorder(QThread):
         """Stop recording"""
         self.recording = False
 
+# Set application identity - add this before creating WhisperApp
+QCoreApplication.setApplicationName("WhisperTranscriber")
+QCoreApplication.setOrganizationName("WhisperTranscriber")
+QCoreApplication.setApplicationVersion("1.0.0")
+
 class WhisperApp(QApplication):
     def __init__(self, argv):
         super().__init__(argv)
@@ -51,9 +60,13 @@ class WhisperApp(QApplication):
         self.recorder = None
         
         # Set up system tray icon
-        self.tray_icon = QSystemTrayIcon(QIcon("microphone.png"))
+        self.tray_icon = QSystemTrayIcon(QIcon(get_resource_path("microphone.ico")))
+        # Add after creating the tray icon
+        print(f"System tray available: {QSystemTrayIcon.isSystemTrayAvailable()}")
+        print(f"Supports messages: {self.tray_icon.supportsMessages()}")
+        print(f"Icon is null: {self.tray_icon.icon().isNull()}")
         # Initialize whisper model
-        model_path = os.path.join(os.path.dirname(__file__), 'whisper.cpp', 'models', 'ggml-base.en.bin')
+        model_path = get_resource_path(os.path.join('whisper.cpp', 'models', 'ggml-base.en.bin'))
         try:
             self.whisper = SubprocessWhisper(model_path)
             print(f"Whisper model loaded from {model_path}")
@@ -80,12 +93,21 @@ class WhisperApp(QApplication):
         quit_action = QAction("Quit", self)
         quit_action.triggered.connect(self.quit)
         menu.addAction(quit_action)
-        
+
+        # Add test notification button to menu
+        test_action = QAction("Test Notification", self)
+        test_action.triggered.connect(self.test_notification)
+        menu.addAction(test_action)
+            
         # Set menu on tray icon
         self.tray_icon.setContextMenu(menu)
         
         # Show the tray icon
+        self.tray_icon.setVisible(True)
         self.tray_icon.show()
+
+        # Process events to ensure the icon is registered with the system
+        QCoreApplication.processEvents()
         
         # Initialize recording state
         self.is_recording = False
@@ -102,13 +124,60 @@ class WhisperApp(QApplication):
         self.listener.start()
         print("Keyboard listener started successfully")
         
-        # Show startup notification
-        self.tray_icon.showMessage(
-            "Whisper Transcriber", 
-            "Press Alt+Period to start recording", 
-            QSystemTrayIcon.Information, 
-            3000
-        )
+        # Add a delay to let the system tray fully initialize
+        QTimer.singleShot(1000, self.show_startup_notification)
+    
+    def test_notification(self):
+        """Test function to manually trigger a notification"""
+        print("Testing notification...")
+        
+        # Try a simple, direct approach
+        try:
+            # Reinitialize the icon
+            old_icon = self.tray_icon.icon()
+            self.tray_icon.setIcon(QIcon())
+            self.tray_icon.setIcon(old_icon)
+            
+            # Process events
+            QCoreApplication.processEvents()
+            
+            # Show notification
+            self.tray_icon.showMessage(
+                "Test Notification", 
+                "This is a test notification", 
+                QSystemTrayIcon.Critical,
+                8000
+            )
+            
+            print("Test notification sent")
+        except Exception as e:
+            print(f"Error showing test notification: {e}")
+            traceback.print_exc()
+
+    def show_startup_notification(self):
+        """Show the startup notification after a delay"""
+        try:
+            # Create a proper notification icon
+            notification_icon = QIcon(get_resource_path("microphone.ico"))
+            
+            # Set the notification icon explicitly
+            self.tray_icon.setIcon(notification_icon)
+            
+            # Process events to ensure the icon is registered
+            QCoreApplication.processEvents()
+            
+            # Show notification with the icon
+            self.tray_icon.showMessage(
+                "Whisper Transcriber", 
+                "Press Alt+Period to start recording", 
+                QSystemTrayIcon.Information,  # Change from Critical to Information
+                5000  # 5 seconds duration
+            )
+            
+            print("Notification sent")
+        except Exception as e:
+            print(f"Error showing notification: {e}")
+            traceback.print_exc()
     
     def on_press(self, key):
         """Handle key press events"""
@@ -155,6 +224,12 @@ class WhisperApp(QApplication):
             self.recorder.finished.connect(self.handle_audio)
             self.recorder.start()
             
+            # Before showing notification in toggle_recording, add:
+            old_icon = self.tray_icon.icon()
+            self.tray_icon.setIcon(QIcon())
+            self.tray_icon.setIcon(old_icon)
+            QCoreApplication.processEvents()
+
             # Show notification
             self.tray_icon.showMessage(
                 "Whisper Transcriber", 
@@ -168,6 +243,11 @@ class WhisperApp(QApplication):
             self.status_action.setText("Processing...")
             self.tray_icon.setToolTip("Processing...")
             
+            old_icon = self.tray_icon.icon()
+            self.tray_icon.setIcon(QIcon())
+            self.tray_icon.setIcon(old_icon)
+            QCoreApplication.processEvents()
+
             # Show immediate notification
             self.tray_icon.showMessage(
                 "Whisper Transcriber", 
